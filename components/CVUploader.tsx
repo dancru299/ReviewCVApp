@@ -3,6 +3,15 @@
 import { ChangeEvent } from "react";
 import { FileUp, Send, X } from "lucide-react";
 
+const JOB_PRESETS = [
+  "Fresher Backend Developer",
+  "Fresher Frontend Developer",
+  "Fresher Fullstack Developer",
+  "Intern Software Engineer",
+  "Fresher Mobile Developer",
+  "Fresher Data Engineer",
+];
+
 interface CVUploaderProps {
   cvText: string;
   file: File | null;
@@ -51,6 +60,22 @@ export function CVUploader({
           type="text"
           value={jobTitle}
         />
+        <div className="mt-2 flex flex-wrap gap-2">
+          {JOB_PRESETS.map((preset) => (
+            <button
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                jobTitle === preset
+                  ? "border-ocean bg-ocean text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-ocean hover:text-ocean"
+              }`}
+              key={preset}
+              onClick={() => onJobTitleChange(preset)}
+              type="button"
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div>

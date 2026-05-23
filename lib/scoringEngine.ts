@@ -68,6 +68,28 @@ const TECH_KEYWORDS = [
   "redux"
 ];
 
+const ROLE_KEYWORD_MAP: Record<string, string[]> = {
+  backend: ["node", "java", "python", "golang", "spring", "express", "fastapi", "postgres", "mysql", "redis", "kafka", "rabbitmq", "rest", "graphql", "microservice", "orm", "hibernate"],
+  frontend: ["react", "vue", "angular", "next.js", "typescript", "css", "html", "tailwind", "webpack", "vite", "redux", "figma", "responsive", "storybook", "sass"],
+  fullstack: ["react", "node", "typescript", "next.js", "postgres", "rest", "docker", "prisma", "sequelize"],
+  mobile: ["react native", "flutter", "android", "ios", "kotlin", "swift", "dart", "firebase", "expo"],
+  data: ["python", "sql", "pandas", "numpy", "machine learning", "tensorflow", "pytorch", "spark", "tableau", "power bi", "scikit", "jupyter", "airflow"],
+  devops: ["docker", "kubernetes", "aws", "gcp", "azure", "terraform", "ci/cd", "jenkins", "linux", "ansible", "helm", "prometheus", "grafana"],
+  qa: ["selenium", "cypress", "jest", "postman", "jmeter", "automation", "playwright", "api testing", "performance testing", "test plan"]
+};
+
+function getRoleKeywords(jobTitle: string): string[] {
+  const lower = jobTitle.toLowerCase();
+  if (/\b(backend|back-end|back end)\b/.test(lower)) return ROLE_KEYWORD_MAP.backend;
+  if (/\b(frontend|front-end|front end)\b/.test(lower)) return ROLE_KEYWORD_MAP.frontend;
+  if (/\b(fullstack|full-stack|full stack)\b/.test(lower)) return ROLE_KEYWORD_MAP.fullstack;
+  if (/\b(mobile|android|ios|flutter)\b/.test(lower)) return ROLE_KEYWORD_MAP.mobile;
+  if (/\b(data|ml|ai|machine learning|data science)\b/.test(lower)) return ROLE_KEYWORD_MAP.data;
+  if (/\b(devops|sre|infrastructure|cloud)\b/.test(lower)) return ROLE_KEYWORD_MAP.devops;
+  if (/\b(qa|qc|tester|testing)\b/.test(lower)) return ROLE_KEYWORD_MAP.qa;
+  return [];
+}
+
 const GENERIC_SKILLS = [
   "teamwork",
   "communication",
@@ -227,7 +249,9 @@ function scoreAts(context: { lower: string; lines: string[]; jobTitle: string })
     suggestions.push("Dùng heading đơn giản như Summary, Projects, Experience, Education, Skills.");
   }
 
-  const techHits = TECH_KEYWORDS.filter((keyword) => context.lower.includes(keyword));
+  const roleKeywords = getRoleKeywords(context.jobTitle);
+  const allKeywords = unique([...TECH_KEYWORDS, ...roleKeywords]);
+  const techHits = allKeywords.filter((keyword) => context.lower.includes(keyword));
   if (techHits.length >= 5) {
     score += 2;
     positives.push("CV có nhiều keyword kỹ thuật liên quan.");
@@ -336,7 +360,9 @@ function scoreSkills(context: { lower: string; jobTitle: string }) {
   const flags: string[] = [];
   const suggestions: string[] = [];
 
-  const techHits = TECH_KEYWORDS.filter((keyword) => context.lower.includes(keyword));
+  const roleKeywords = getRoleKeywords(context.jobTitle);
+  const allKeywords = unique([...TECH_KEYWORDS, ...roleKeywords]);
+  const techHits = allKeywords.filter((keyword) => context.lower.includes(keyword));
   if (techHits.length >= 6) {
     score += 4;
     positives.push("Skills có nhiều công nghệ cụ thể.");
@@ -479,7 +505,8 @@ function buildWarnings(context: { lower: string; jobTitle: string; wordCount: nu
     warnings.push("CV text khá ngắn; nếu đây là PDF scan hoặc extract thiếu, hãy paste text thủ công để review chính xác hơn.");
   }
 
-  if (!hasAny(context.lower, TECH_KEYWORDS)) {
+  const allKeywords = unique([...TECH_KEYWORDS, ...getRoleKeywords(context.jobTitle)]);
+  if (!allKeywords.some((kw) => context.lower.includes(kw))) {
     warnings.push("Chưa thấy nhiều keyword kỹ thuật; hãy kiểm tra lại text extract từ PDF.");
   }
 

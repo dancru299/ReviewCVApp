@@ -15,26 +15,24 @@ interface ClaudeReviewPayload {
   criteria: CriterionFeedback[];
 }
 
-const SYSTEM_PROMPT = `Bạn là chuyên gia review CV cho fresher/junior tech tại Việt Nam.
+const SYSTEM_PROMPT = `Bạn là chuyên gia review CV cho fresher/junior tech tại Việt Nam, với 10 năm kinh nghiệm tuyển dụng.
 Bạn sẽ nhận: (1) CV text, (2) job title, (3) structured analysis từ scoring engine.
 
-Nhiệm vụ của bạn:
-- Giải thích score bằng tiếng Việt thân thiện, cụ thể
-- Viết 4 snapshot tags, dùng đúng điểm từ engine, không tự đặt điểm
-- Với mỗi section score < 6: viết Before→After rewrite cụ thể
-- Gợi ý 1–2 câu actionable per section
+Nhiệm vụ:
+1. Viết summary 2–3 câu tiếng Việt thân thiện, nêu điểm mạnh nhất và yếu nhất của CV.
+2. Viết đúng 4 snapshot tags: ưu tiên 2 positive (điểm mạnh rõ ràng) + 2 warning (điểm yếu cần sửa ngay). Mỗi tag tối đa 15 từ, cụ thể và actionable.
+3. Với mỗi criterion score < 6: viết 1 cặp Before→After rewrite, lấy ví dụ từ CV text thực. Before phải là đoạn thực từ CV. After phải ngắn gọn, có action verb + scope + result, dùng [số liệu thực] nếu cần placeholder.
+4. Với mỗi criterion: viết 1 câu feedback tiếng Việt cụ thể (không viết lại label), kèm 1–2 suggestions ngắn.
 
-KHÔNG được: tự tính lại score, thêm tiêu chí mới, bịa metrics.
-Nếu không có số liệu thực: ghi [thêm số liệu thực của bạn].
+RÀNG BUỘC CỨNG:
+- Không tự tính lại score — dùng đúng score từ structuredAnalysis.
+- Không bịa metrics, tên công ty, số liệu nếu không có trong CV.
+- Không dùng buzzword như "tuyệt vời", "xuất sắc" khi score thấp.
+- Before phải khác After rõ ràng, không viết After quá giống Before.
 
-Trả về JSON hợp lệ theo schema:
-{
-  "summary": "string",
-  "snapshotTags": [{"tone":"positive|warning","text":"string"}],
-  "rewrites": [{"criterionKey":"impact|ats|structure|education|skills|contact","sectionLabel":"string","before":"string","after":"string","note":"string optional"}],
-  "criteria": [{"key":"impact|ats|structure|education|skills|contact","label":"string","score":0,"feedback":"string","suggestions":["string"]}]
-}
-Không trả về gì ngoài JSON.`;
+OUTPUT: JSON duy nhất, không có text ngoài JSON, không có markdown fence.
+Schema:
+{"summary":"string","snapshotTags":[{"tone":"positive|warning","text":"string"}],"rewrites":[{"criterionKey":"impact|ats|structure|education|skills|contact","sectionLabel":"string","before":"string","after":"string","note":"string"}],"criteria":[{"key":"impact|ats|structure|education|skills|contact","label":"string","score":0,"feedback":"string","suggestions":["string"]}]}`;
 
 export async function buildReviewWithAi(
   cvText: string,
@@ -66,14 +64,20 @@ async function callClaude(
   apiKey: string
 ): Promise<ClaudeReviewPayload> {
   const anthropic = new Anthropic({ apiKey });
-  const model = process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-latest";
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 
   const response = await withTimeout(
     anthropic.messages.create({
       model,
-      max_tokens: 2200,
+      max_tokens: 2400,
       temperature: 0.2,
-      system: SYSTEM_PROMPT,
+      system: [
+        {
+          type: "text",
+          text: SYSTEM_PROMPT,
+          cache_control: { type: "ephemeral" }
+        }
+      ],
       messages: [
         {
           role: "user",

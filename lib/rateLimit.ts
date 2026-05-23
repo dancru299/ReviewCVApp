@@ -5,10 +5,20 @@ interface HitBucket {
 
 const WINDOW_MS = 60 * 60 * 1000;
 const LIMIT = 10;
+const CLEANUP_THRESHOLD = 500;
 const buckets = new Map<string, HitBucket>();
+
+function purgeExpired(now: number) {
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key);
+  }
+}
 
 export function checkRateLimit(key: string): { allowed: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
+
+  if (buckets.size > CLEANUP_THRESHOLD) purgeExpired(now);
+
   const current = buckets.get(key);
 
   if (!current || current.resetAt <= now) {

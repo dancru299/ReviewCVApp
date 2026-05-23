@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ArrowRight, FileText, Github, Heart, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, FileText, Github, Heart, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import { BeforeAfterCard } from "@/components/BeforeAfterCard";
 import { CVUploader } from "@/components/CVUploader";
 import { ScoreSnapshot } from "@/components/ScoreSnapshot";
@@ -24,6 +24,7 @@ export function ReviewWorkspace() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const resultRef = useRef<HTMLDivElement | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
 
   const wordCount = useMemo(() => {
     const matches = cvText.trim().match(/[\p{L}\p{N}][\p{L}\p{N}'._-]*/gu);
@@ -45,6 +46,14 @@ export function ReviewWorkspace() {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [result]);
+
+  function handleReset() {
+    setResult(null);
+    setError("");
+    setCvText("");
+    setFile(null);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function handleSubmit() {
     setError("");
@@ -107,7 +116,7 @@ export function ReviewWorkspace() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] lg:px-8 lg:py-10">
+      <section ref={formRef} className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] lg:px-8 lg:py-10">
         <div className="flex min-h-[calc(100vh-132px)] flex-col justify-between gap-8">
           <div className="max-w-2xl">
             <h1 className="text-4xl font-semibold leading-tight tracking-normal text-ink sm:text-5xl">
@@ -211,6 +220,15 @@ export function ReviewWorkspace() {
                   ))}
                 </div>
               </div>
+
+              <button
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:border-ocean hover:text-ocean"
+                onClick={handleReset}
+                type="button"
+              >
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                Review CV khác
+              </button>
 
               <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
                 <div>
